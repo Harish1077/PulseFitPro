@@ -1,0 +1,200 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-5">Track Your Fitness Journey</h1>
+            <p class="lead">Professional workout tracking inside Docker 🚀</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="card bg-light mb-2">
+                <div class="card-body">
+                    <h5 class="card-title">Welcome, {{ current_user.username }}</h5>
+                    <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card text-bg-success mb-3">
+                <div class="card-body">
+                    <h2 class="card-title">{{ workouts|length }}</h2>
+                    <p class="card-text">Total Workouts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-bg-info mb-3">
+                <div class="card-body">
+                    <h2 class="card-title">{{ workouts | sum(attribute='calories') if workouts else 0 }}</h2>
+                    <p class="card-text">Total Calories</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Add Workout</h4>
+                    <form method="POST" action="/add">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.exercise.label(class="form-label") }}
+                            {{ form.exercise(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.calories.label(class="form-label") }}
+                            {{ form.calories(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.duration.label(class="form-label") }}
+                            {{ form.duration(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control") }}
+                        </div>
+                        <button type="submit" class="btn btn-success">Add Workout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-5">
+        <div class="col-12">
+            <h3 class="mb-3">Progress Charts</h3>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <canvas id="caloriesChart" height="80"></canvas>
+                    <canvas id="durationChart" height="80" class="mt-4"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <h3 class="mb-3">Your Workouts</h3>
+            <div class="row">
+                {% for workout in workouts %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ workout.exercise }}</h5>
+                            <p class="card-text">{{ workout.calories }} Calories Burned</p>
+                            <p class="card-text">Duration: {{ workout.duration }} min</p>
+                            {% if workout.notes %}
+                            <p class="card-text">Notes: {{ workout.notes }}</p>
+                            {% endif %}
+                            <p class="card-text"><small class="text-muted">{{ workout.date.strftime('%Y-%m-%d %H:%M') }}</small></p>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <p>No workouts yet. Start by adding one!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const workouts = [
+            {% for workout in workouts %}
+            {
+                date: "{{ workout.date.strftime('%Y-%m-%d') }}",
+                calories: {{ workout.calories }},
+                duration: {{ workout.duration }}
+            },
+            {% endfor %}
+        ];
+        const labels = workouts.map(w => w.date);
+        const caloriesData = workouts.map(w => w.calories);
+        const durationData = workouts.map(w => w.duration);
+        new Chart(document.getElementById('caloriesChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Calories Burned',
+                    data: caloriesData,
+                    borderColor: 'rgba(34,197,94,1)',
+                    backgroundColor: 'rgba(34,197,94,0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } }
+            }
+        });
+        new Chart(document.getElementById('durationChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Duration (min)',
+                    data: durationData,
+                    backgroundColor: 'rgba(59,130,246,0.7)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true } }
+            }
+        });
+    </script>
+    {% endblock %}
+
+<section class="form-section">
+
+    <form action="/add" method="POST" class="workout-form">
+
+        <input
+            type="text"
+            name="exercise"
+            placeholder="Workout Name"
+            required
+        >
+
+        <input
+            type="number"
+            name="calories"
+            placeholder="Calories Burned"
+            required
+        >
+
+        <button type="submit">
+            Add Workout
+        </button>
+
+    </form>
+
+</section>
+
+<section class="workout-container">
+
+    {% for workout in workouts %}
+
+    <div class="workout-card">
+
+        <div>
+            <h2>{{ workout.exercise }}</h2>
+            <p>{{ workout.calories }} Calories Burned</p>
+        </div>
+
+        <div class="badge">
+            Active
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</section>
+
+</body>
+</html>
