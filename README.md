@@ -24,4 +24,6 @@ Dockerfile / docker-compose.yml — container configuration
 
 # Run with Docker Compose
 docker-compose up --build
-App: http://localhost:5000
+
+# App
+http://localhost:5000
